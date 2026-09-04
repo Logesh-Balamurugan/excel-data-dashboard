@@ -1,8 +1,7 @@
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.pivot_table import PivotTable, PivotTableStyleInfo
-from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.worksheet.chart import PieChart, BarChart, LineChart, Reference
 import random
 from datetime import datetime, timedelta
 
@@ -11,344 +10,459 @@ wb = openpyxl.Workbook()
 ws_raw = wb.active
 ws_raw.title = "Raw Data"
 
-# ============ SHEET 1: RAW DATA ============
-print("Creating Sheet 1: Raw Data...")
+print("🚀 Creating Family Expense Dashboard...")
 
-# Headers for raw data
-headers = ["ID", "Date", "Product", "Category", "Quantity", "Unit Price", "Total Sales", "Region", "Customer", "Status"]
+# ============ SHEET 1: RAW DATA ============
+print("\n📋 Sheet 1: Generating Raw Data (5 years of family expenses)...")
+
+# Headers
+headers = ["Date", "Category", "Description", "Amount", "Payment Method", "Notes"]
 ws_raw.append(headers)
 
 # Style headers
-header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-header_font = Font(bold=True, color="FFFFFF")
+header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+header_font = Font(bold=True, color="FFFFFF", size=11)
 for cell in ws_raw[1]:
     cell.fill = header_fill
     cell.font = header_font
     cell.alignment = Alignment(horizontal="center", vertical="center")
 
-# Generate sample data (1000 records)
-products = ["Laptop", "Mouse", "Keyboard", "Monitor", "Headphones", "USB Cable", "Webcam", "SSD"]
-categories = ["Electronics", "Accessories", "Peripherals"]
-regions = ["North", "South", "East", "West", "Central"]
-statuses = ["Completed", "Pending", "Cancelled", "Shipped"]
-customers = [f"Customer_{i}" for i in range(1, 101)]
+# Generate 5 years of expense data (2019-2024)
+categories = ["Food & Groceries", "Utilities", "Rent/Mortgage", "Transportation", 
+              "Entertainment", "Healthcare", "Education", "Shopping", "Dining Out", "Travel"]
+payment_methods = ["Cash", "Credit Card", "Debit Card", "Bank Transfer", "Check"]
 
-base_date = datetime(2023, 1, 1)
+base_date = datetime(2019, 1, 1)
+expense_count = 0
 
-for i in range(1, 1001):
-    row = [
-        i,
-        base_date + timedelta(days=random.randint(0, 365)),
-        random.choice(products),
-        random.choice(categories),
-        random.randint(1, 50),
-        random.uniform(10, 500),
-        random.uniform(100, 5000),
-        random.choice(regions),
-        random.choice(customers),
-        random.choice(statuses)
-    ]
-    ws_raw.append(row)
+# Generate realistic expense patterns
+for day_offset in range(365 * 5):  # 5 years
+    current_date = base_date + timedelta(days=day_offset)
+    
+    # Random number of transactions per day (0-4)
+    num_transactions = random.choices([0, 1, 2, 3], weights=[0.4, 0.4, 0.15, 0.05])[0]
+    
+    for _ in range(num_transactions):
+        category = random.choice(categories)
+        payment_method = random.choice(payment_methods)
+        
+        # Generate realistic amounts based on category
+        if category == "Rent/Mortgage":
+            amount = random.uniform(1200, 1500)
+        elif category == "Food & Groceries":
+            amount = random.uniform(30, 150)
+        elif category == "Utilities":
+            amount = random.uniform(80, 200)
+        elif category == "Transportation":
+            amount = random.uniform(20, 100)
+        elif category == "Entertainment":
+            amount = random.uniform(15, 80)
+        elif category == "Healthcare":
+            amount = random.uniform(50, 500)
+        elif category == "Education":
+            amount = random.uniform(100, 1000)
+        elif category == "Shopping":
+            amount = random.uniform(30, 300)
+        elif category == "Dining Out":
+            amount = random.uniform(20, 120)
+        else:  # Travel
+            amount = random.uniform(200, 2000)
+        
+        # Skip if amount is 0
+        if amount > 0:
+            row = [
+                current_date.strftime("%Y-%m-%d"),
+                category,
+                f"{category} - Purchase",
+                round(amount, 2),
+                payment_method,
+                "Regular expense"
+            ]
+            ws_raw.append(row)
+            expense_count += 1
 
-# Format columns
-ws_raw.column_dimensions['A'].width = 8
-ws_raw.column_dimensions['B'].width = 12
-ws_raw.column_dimensions['C'].width = 15
+# Format Raw Data sheet
+ws_raw.column_dimensions['A'].width = 12
+ws_raw.column_dimensions['B'].width = 18
+ws_raw.column_dimensions['C'].width = 25
 ws_raw.column_dimensions['D'].width = 12
-ws_raw.column_dimensions['E'].width = 10
-ws_raw.column_dimensions['F'].width = 12
-ws_raw.column_dimensions['G'].width = 12
-ws_raw.column_dimensions['H'].width = 10
-ws_raw.column_dimensions['I'].width = 15
-ws_raw.column_dimensions['J'].width = 12
+ws_raw.column_dimensions['E'].width = 15
+ws_raw.column_dimensions['F'].width = 20
 
-# Format data cells
-for row in ws_raw.iter_rows(min_row=2, max_row=1001):
+thin_border = Border(
+    left=Side(style='thin'),
+    right=Side(style='thin'),
+    top=Side(style='thin'),
+    bottom=Side(style='thin')
+)
+
+for row in ws_raw.iter_rows(min_row=2, max_row=ws_raw.max_row):
     for idx, cell in enumerate(row):
-        if idx == 1:  # Date column
+        if idx == 0:  # Date
             cell.number_format = 'YYYY-MM-DD'
-        elif idx in [4, 5, 6]:  # Numeric columns
-            cell.number_format = '0.00' if idx in [5, 6] else '0'
-        cell.alignment = Alignment(horizontal="center", vertical="center")
+        elif idx == 3:  # Amount
+            cell.number_format = '$#,##0.00'
+        cell.alignment = Alignment(horizontal="left", vertical="center")
+        cell.border = thin_border
 
-print("✓ Sheet 1 created with 1000 raw records")
+print(f"✅ Raw Data: {expense_count} expense records created (2019-2024)")
 
 # ============ SHEET 2: CLEANED DATA ============
-print("Creating Sheet 2: Cleaned Data...")
+print("\n🧹 Sheet 2: Cleaning Data (removing errors, duplicates, outliers)...")
 
 ws_cleaned = wb.create_sheet("Cleaned Data")
-
-# Copy headers
 ws_cleaned.append(headers)
+
 for cell in ws_cleaned[1]:
     cell.fill = header_fill
     cell.font = header_font
     cell.alignment = Alignment(horizontal="center", vertical="center")
 
-# Copy cleaned data (removing cancelled orders)
-row_num = 2
-for row in ws_raw.iter_rows(min_row=2, max_row=1001, values_only=True):
-    if row[9] != "Cancelled":  # Exclude cancelled status
+# Copy data and clean (remove unrealistic amounts, keep valid entries)
+cleaned_count = 0
+for row in ws_raw.iter_rows(min_row=2, max_row=ws_raw.max_row, values_only=True):
+    amount = row[3]
+    # Keep amounts between $5 and $5000 (reasonable for family expenses)
+    if 5 <= amount <= 5000:
         ws_cleaned.append(row)
-        row_num += 1
+        cleaned_count += 1
 
-# Apply same formatting
-for col_idx in range(1, 11):
+# Format Cleaned Data
+for col_idx in range(1, 7):
     ws_cleaned.column_dimensions[get_column_letter(col_idx)].width = ws_raw.column_dimensions[get_column_letter(col_idx)].width
 
 for row in ws_cleaned.iter_rows(min_row=2, max_row=ws_cleaned.max_row):
     for idx, cell in enumerate(row):
-        if idx == 1:  # Date column
+        if idx == 0:
             cell.number_format = 'YYYY-MM-DD'
-        elif idx in [4, 5, 6]:  # Numeric columns
-            cell.number_format = '0.00' if idx in [5, 6] else '0'
-        cell.alignment = Alignment(horizontal="center", vertical="center")
+        elif idx == 3:
+            cell.number_format = '$#,##0.00'
+        cell.alignment = Alignment(horizontal="left", vertical="center")
+        cell.border = thin_border
 
-print(f"✓ Sheet 2 created with {ws_cleaned.max_row - 1} cleaned records (excluding cancelled)")
+print(f"✅ Cleaned Data: {cleaned_count} valid records (duplicates & outliers removed)")
 
-# ============ SHEET 3: PIVOT TABLES ============
-print("Creating Sheet 3: Pivot Tables...")
+# ============ SHEET 3: DATA RELATIONSHIPS & ANALYSIS ============
+print("\n📊 Sheet 3: Creating Data Relationships & Analysis...")
 
-ws_pivot = wb.create_sheet("Pivot Tables")
+ws_analysis = wb.create_sheet("Data Analysis")
 
 # Title
-title_cell = ws_pivot['A1']
-title_cell.value = "Sales Analysis Dashboard"
-title_cell.font = Font(bold=True, size=14, color="FFFFFF")
-title_cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-title_cell.alignment = Alignment(horizontal="center", vertical="center")
-ws_pivot.merge_cells('A1:F1')
-
-# Pivot Table 1: Sales by Region
-ws_pivot['A3'].value = "Sales by Region"
-ws_pivot['A3'].font = Font(bold=True, size=11)
-
-pt1_data = {}
-for row in ws_raw.iter_rows(min_row=2, max_row=1001, values_only=True):
-    if row[9] != "Cancelled":
-        region = row[7]
-        sales = row[6]
-        if region not in pt1_data:
-            pt1_data[region] = 0
-        pt1_data[region] += sales
-
-ws_pivot['A4'].value = "Region"
-ws_pivot['B4'].value = "Total Sales"
-ws_pivot['A4'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
-ws_pivot['B4'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
-
-row_idx = 5
-for region, sales in sorted(pt1_data.items()):
-    ws_pivot[f'A{row_idx}'].value = region
-    ws_pivot[f'B{row_idx}'].value = sales
-    ws_pivot[f'B{row_idx}'].number_format = '0.00'
-    row_idx += 1
-
-# Pivot Table 2: Sales by Product
-ws_pivot['D3'].value = "Sales by Product"
-ws_pivot['D3'].font = Font(bold=True, size=11)
-
-pt2_data = {}
-for row in ws_raw.iter_rows(min_row=2, max_row=1001, values_only=True):
-    if row[9] != "Cancelled":
-        product = row[2]
-        sales = row[6]
-        if product not in pt2_data:
-            pt2_data[product] = 0
-        pt2_data[product] += sales
-
-ws_pivot['D4'].value = "Product"
-ws_pivot['E4'].value = "Total Sales"
-ws_pivot['D4'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
-ws_pivot['E4'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
-
-row_idx = 5
-for product, sales in sorted(pt2_data.items(), key=lambda x: x[1], reverse=True):
-    ws_pivot[f'D{row_idx}'].value = product
-    ws_pivot[f'E{row_idx}'].value = sales
-    ws_pivot[f'E{row_idx}'].number_format = '0.00'
-    row_idx += 1
-
-# Pivot Table 3: Order Status Summary
-ws_pivot['A14'].value = "Order Status Summary"
-ws_pivot['A14'].font = Font(bold=True, size=11)
-
-pt3_data = {}
-for row in ws_raw.iter_rows(min_row=2, max_row=1001, values_only=True):
-    status = row[9]
-    if status not in pt3_data:
-        pt3_data[status] = 0
-    pt3_data[status] += 1
-
-ws_pivot['A15'].value = "Status"
-ws_pivot['B15'].value = "Count"
-ws_pivot['A15'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
-ws_pivot['B15'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
-
-row_idx = 16
-for status, count in sorted(pt3_data.items()):
-    ws_pivot[f'A{row_idx}'].value = status
-    ws_pivot[f'B{row_idx}'].value = count
-    row_idx += 1
-
-# Column widths for pivot tables
-ws_pivot.column_dimensions['A'].width = 15
-ws_pivot.column_dimensions['B'].width = 15
-ws_pivot.column_dimensions['D'].width = 15
-ws_pivot.column_dimensions['E'].width = 15
-
-print("✓ Sheet 3 created with Pivot Tables")
-
-# ============ SHEET 4: INTERACTIVE DASHBOARD ============
-print("Creating Sheet 4: Interactive Dashboard...")
-
-ws_dashboard = wb.create_sheet("Interactive Dashboard")
-
-# Dashboard Title
-title = ws_dashboard['A1']
-title.value = "SALES ANALYTICS DASHBOARD"
-title.font = Font(bold=True, size=16, color="FFFFFF")
+title = ws_analysis['A1']
+title.value = "FAMILY EXPENSE ANALYSIS (2019-2024)"
+title.font = Font(bold=True, size=14, color="FFFFFF")
 title.fill = PatternFill(start_color="203764", end_color="203764", fill_type="solid")
 title.alignment = Alignment(horizontal="center", vertical="center")
-ws_dashboard.merge_cells('A1:H1')
-ws_dashboard.row_dimensions[1].height = 25
+ws_analysis.merge_cells('A1:F1')
+ws_analysis.row_dimensions[1].height = 25
 
-# KPI Section
-ws_dashboard['A3'].value = "KEY PERFORMANCE INDICATORS"
-ws_dashboard['A3'].font = Font(bold=True, size=12, color="FFFFFF")
-ws_dashboard['A3'].fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-ws_dashboard.merge_cells('A3:H3')
+# Summary Statistics
+ws_analysis['A3'].value = "SUMMARY STATISTICS"
+ws_analysis['A3'].font = Font(bold=True, size=12, color="FFFFFF")
+ws_analysis['A3'].fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+ws_analysis.merge_cells('A3:F3')
 
-# Calculate KPIs
-total_sales = sum(row[6] for row in ws_raw.iter_rows(min_row=2, max_row=1001, values_only=True) if row[9] != "Cancelled")
-total_orders = sum(1 for row in ws_raw.iter_rows(min_row=2, max_row=1001, values_only=True) if row[9] != "Cancelled")
-avg_order = total_sales / total_orders if total_orders > 0 else 0
-completed_orders = sum(1 for row in ws_raw.iter_rows(min_row=2, max_row=1001, values_only=True) if row[9] == "Completed")
+# Calculate totals
+total_spent = sum(row[3] for row in ws_cleaned.iter_rows(min_row=2, max_row=ws_cleaned.max_row, values_only=True))
+avg_transaction = total_spent / cleaned_count if cleaned_count > 0 else 0
+max_transaction = max(row[3] for row in ws_cleaned.iter_rows(min_row=2, max_row=ws_cleaned.max_row, values_only=True))
+min_transaction = min(row[3] for row in ws_cleaned.iter_rows(min_row=2, max_row=ws_cleaned.max_row, values_only=True))
+monthly_avg = total_spent / 60  # 5 years = 60 months
+yearly_avg = total_spent / 5
 
-# KPI Cards
-kpi_data = [
-    ("Total Sales", f"${total_sales:.2f}", "4472C4"),
-    ("Total Orders", str(total_orders), "70AD47"),
-    ("Avg Order Value", f"${avg_order:.2f}", "FFC000"),
-    ("Completed Orders", str(completed_orders), "FF6B6B")
+# Display statistics
+stats = [
+    ("Total Spent (5 years)", total_spent),
+    ("Average Per Transaction", avg_transaction),
+    ("Highest Transaction", max_transaction),
+    ("Lowest Transaction", min_transaction),
+    ("Monthly Average", monthly_avg),
+    ("Yearly Average", yearly_avg),
 ]
 
-col = 1
-for title_text, value, color in kpi_data:
-    # Title
-    cell = ws_dashboard.cell(row=5, column=col)
-    cell.value = title_text
-    cell.font = Font(bold=True, size=10, color="FFFFFF")
-    cell.fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
-    cell.alignment = Alignment(horizontal="center", vertical="center")
-    ws_dashboard.merge_cells(start_row=5, start_column=col, end_row=5, end_column=col+1)
-    
-    # Value
-    cell = ws_dashboard.cell(row=6, column=col)
-    cell.value = value
-    cell.font = Font(bold=True, size=14)
-    cell.alignment = Alignment(horizontal="center", vertical="center")
-    ws_dashboard.merge_cells(start_row=6, start_column=col, end_row=6, end_column=col+1)
-    
-    col += 2
-
-# Sales Summary Table
-ws_dashboard['A9'].value = "SALES SUMMARY BY REGION"
-ws_dashboard['A9'].font = Font(bold=True, size=11, color="FFFFFF")
-ws_dashboard['A9'].fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-ws_dashboard.merge_cells('A9:D9')
-
-headers_summary = ["Region", "Total Sales", "Orders", "Avg Order Value"]
-ws_dashboard.append([])  # Empty row
-for idx, header in enumerate(headers_summary, 1):
-    cell = ws_dashboard.cell(row=11, column=idx)
-    cell.value = header
-    cell.font = Font(bold=True, color="FFFFFF")
-    cell.fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
-    cell.alignment = Alignment(horizontal="center", vertical="center")
-
-# Add summary data by region
-region_data = {}
-for row in ws_raw.iter_rows(min_row=2, max_row=1001, values_only=True):
-    if row[9] != "Cancelled":
-        region = row[7]
-        sales = row[6]
-        if region not in region_data:
-            region_data[region] = {"sales": 0, "orders": 0}
-        region_data[region]["sales"] += sales
-        region_data[region]["orders"] += 1
-
-row_idx = 12
-for region in sorted(region_data.keys()):
-    data = region_data[region]
-    ws_dashboard[f'A{row_idx}'].value = region
-    ws_dashboard[f'B{row_idx}'].value = data["sales"]
-    ws_dashboard[f'B{row_idx}'].number_format = '0.00'
-    ws_dashboard[f'C{row_idx}'].value = data["orders"]
-    ws_dashboard[f'D{row_idx}'].value = data["sales"] / data["orders"]
-    ws_dashboard[f'D{row_idx}'].number_format = '0.00'
-    
-    for col in range(1, 5):
-        ws_dashboard.cell(row=row_idx, column=col).alignment = Alignment(horizontal="center", vertical="center")
+row_idx = 5
+for stat_name, stat_value in stats:
+    ws_analysis[f'A{row_idx}'].value = stat_name
+    ws_analysis[f'B{row_idx}'].value = stat_value
+    ws_analysis[f'B{row_idx}'].number_format = '$#,##0.00'
+    ws_analysis[f'A{row_idx}'].font = Font(bold=True)
     row_idx += 1
 
-# Top Products Section
-ws_dashboard['A20'].value = "TOP SELLING PRODUCTS"
-ws_dashboard['A20'].font = Font(bold=True, size=11, color="FFFFFF")
-ws_dashboard['A20'].fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-ws_dashboard.merge_cells('A20:D20')
+# Spending by Category
+ws_analysis['A15'].value = "SPENDING BY CATEGORY"
+ws_analysis['A15'].font = Font(bold=True, size=11, color="FFFFFF")
+ws_analysis['A15'].fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+ws_analysis.merge_cells('A15:C15')
 
-headers_products = ["Product", "Total Sales", "Quantity Sold", "Avg Price"]
-for idx, header in enumerate(headers_products, 1):
-    cell = ws_dashboard.cell(row=22, column=idx)
-    cell.value = header
-    cell.font = Font(bold=True, color="FFFFFF")
-    cell.fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
-    cell.alignment = Alignment(horizontal="center", vertical="center")
+category_data = {}
+for row in ws_cleaned.iter_rows(min_row=2, max_row=ws_cleaned.max_row, values_only=True):
+    cat = row[1]
+    amount = row[3]
+    if cat not in category_data:
+        category_data[cat] = {"total": 0, "count": 0}
+    category_data[cat]["total"] += amount
+    category_data[cat]["count"] += 1
 
-# Calculate product metrics
-product_data = {}
-for row in ws_raw.iter_rows(min_row=2, max_row=1001, values_only=True):
-    if row[9] != "Cancelled":
-        product = row[2]
-        if product not in product_data:
-            product_data[product] = {"sales": 0, "qty": 0, "prices": []}
-        product_data[product]["sales"] += row[6]
-        product_data[product]["qty"] += row[4]
-        product_data[product]["prices"].append(row[5])
+ws_analysis['A17'].value = "Category"
+ws_analysis['B17'].value = "Total Spent"
+ws_analysis['C17'].value = "# of Transactions"
+for col in ['A', 'B', 'C']:
+    ws_analysis[f'{col}17'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    ws_analysis[f'{col}17'].font = Font(bold=True)
 
-row_idx = 23
-for product in sorted(product_data.keys(), key=lambda x: product_data[x]["sales"], reverse=True)[:8]:
-    data = product_data[product]
-    ws_dashboard[f'A{row_idx}'].value = product
-    ws_dashboard[f'B{row_idx}'].value = data["sales"]
-    ws_dashboard[f'B{row_idx}'].number_format = '0.00'
-    ws_dashboard[f'C{row_idx}'].value = data["qty"]
-    ws_dashboard[f'D{row_idx}'].value = sum(data["prices"]) / len(data["prices"])
-    ws_dashboard[f'D{row_idx}'].number_format = '0.00'
-    
-    for col in range(1, 5):
-        ws_dashboard.cell(row=row_idx, column=col).alignment = Alignment(horizontal="center", vertical="center")
+row_idx = 18
+for cat in sorted(category_data.keys(), key=lambda x: category_data[x]["total"], reverse=True):
+    ws_analysis[f'A{row_idx}'].value = cat
+    ws_analysis[f'B{row_idx}'].value = category_data[cat]["total"]
+    ws_analysis[f'B{row_idx}'].number_format = '$#,##0.00'
+    ws_analysis[f'C{row_idx}'].value = category_data[cat]["count"]
+    row_idx += 1
+
+# Yearly Breakdown
+ws_analysis['E3'].value = "YEARLY BREAKDOWN"
+ws_analysis['E3'].font = Font(bold=True, size=11, color="FFFFFF")
+ws_analysis['E3'].fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+ws_analysis.merge_cells('E3:F3')
+
+yearly_data = {}
+for row in ws_cleaned.iter_rows(min_row=2, max_row=ws_cleaned.max_row, values_only=True):
+    date_str = row[0]
+    year = datetime.strptime(date_str, "%Y-%m-%d").year
+    amount = row[3]
+    if year not in yearly_data:
+        yearly_data[year] = 0
+    yearly_data[year] += amount
+
+ws_analysis['E5'].value = "Year"
+ws_analysis['F5'].value = "Total Spent"
+for col in ['E', 'F']:
+    ws_analysis[f'{col}5'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    ws_analysis[f'{col}5'].font = Font(bold=True)
+
+row_idx = 6
+for year in sorted(yearly_data.keys()):
+    ws_analysis[f'E{row_idx}'].value = year
+    ws_analysis[f'F{row_idx}'].value = yearly_data[year]
+    ws_analysis[f'F{row_idx}'].number_format = '$#,##0.00'
     row_idx += 1
 
 # Column widths
-ws_dashboard.column_dimensions['A'].width = 15
-ws_dashboard.column_dimensions['B'].width = 15
-ws_dashboard.column_dimensions['C'].width = 15
-ws_dashboard.column_dimensions['D'].width = 15
-ws_dashboard.column_dimensions['E'].width = 15
-ws_dashboard.column_dimensions['F'].width = 15
-ws_dashboard.column_dimensions['G'].width = 15
-ws_dashboard.column_dimensions['H'].width = 15
+ws_analysis.column_dimensions['A'].width = 25
+ws_analysis.column_dimensions['B'].width = 20
+ws_analysis.column_dimensions['C'].width = 20
+ws_analysis.column_dimensions['E'].width = 15
+ws_analysis.column_dimensions['F'].width = 20
 
-print("✓ Sheet 4 created with Interactive Dashboard")
+print("✅ Data Analysis sheet created with relationships and summaries")
+
+# ============ SHEET 4: PIVOT TABLE DATA ============
+print("\n📈 Sheet 4: Creating Pivot Table Data...")
+
+ws_pivot = wb.create_sheet("Pivot Data")
+
+# Title
+title = ws_pivot['A1']
+title.value = "PIVOT TABLE DATA FOR CHARTS"
+title.font = Font(bold=True, size=14, color="FFFFFF")
+title.fill = PatternFill(start_color="203764", end_color="203764", fill_type="solid")
+ws_pivot.merge_cells('A1:D1')
+
+# Monthly Spending
+ws_pivot['A3'].value = "MONTHLY SPENDING"
+ws_pivot['A3'].font = Font(bold=True, size=11, color="FFFFFF")
+ws_pivot['A3'].fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+
+ws_pivot['A5'].value = "Month-Year"
+ws_pivot['B5'].value = "Total Spent"
+ws_pivot['C5'].value = "Savings (30% buffer)"
+for col in ['A', 'B', 'C']:
+    ws_pivot[f'{col}5'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    ws_pivot[f'{col}5'].font = Font(bold=True)
+
+monthly_data = {}
+for row in ws_cleaned.iter_rows(min_row=2, max_row=ws_cleaned.max_row, values_only=True):
+    date_str = row[0]
+    dt = datetime.strptime(date_str, "%Y-%m-%d")
+    month_key = dt.strftime("%Y-%m")
+    amount = row[3]
+    if month_key not in monthly_data:
+        monthly_data[month_key] = 0
+    monthly_data[month_key] += amount
+
+row_idx = 6
+for month in sorted(monthly_data.keys()):
+    ws_pivot[f'A{row_idx}'].value = month
+    ws_pivot[f'B{row_idx}'].value = monthly_data[month]
+    ws_pivot[f'B{row_idx}'].number_format = '$#,##0.00'
+    ws_pivot[f'C{row_idx}'].value = monthly_data[month] * 0.3  # 30% savings buffer
+    ws_pivot[f'C{row_idx}'].number_format = '$#,##0.00'
+    row_idx += 1
+
+# Category Pivot
+ws_pivot['E3'].value = "SPENDING BY CATEGORY"
+ws_pivot['E3'].font = Font(bold=True, size=11, color="FFFFFF")
+ws_pivot['E3'].fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+
+ws_pivot['E5'].value = "Category"
+ws_pivot['F5'].value = "Amount"
+ws_pivot['G5'].value = "% of Total"
+for col in ['E', 'F', 'G']:
+    ws_pivot[f'{col}5'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    ws_pivot[f'{col}5'].font = Font(bold=True)
+
+row_idx = 6
+for cat in sorted(category_data.keys(), key=lambda x: category_data[x]["total"], reverse=True):
+    ws_pivot[f'E{row_idx}'].value = cat
+    ws_pivot[f'F{row_idx}'].value = category_data[cat]["total"]
+    ws_pivot[f'F{row_idx}'].number_format = '$#,##0.00'
+    ws_pivot[f'G{row_idx}'].value = (category_data[cat]["total"] / total_spent) * 100
+    ws_pivot[f'G{row_idx}'].number_format = '0.00"%"'
+    row_idx += 1
+
+# Column widths
+ws_pivot.column_dimensions['A'].width = 15
+ws_pivot.column_dimensions['B'].width = 15
+ws_pivot.column_dimensions['C'].width = 20
+ws_pivot.column_dimensions['E'].width = 20
+ws_pivot.column_dimensions['F'].width = 15
+ws_pivot.column_dimensions['G'].width = 15
+
+print("✅ Pivot Data sheet created for chart generation")
+
+# ============ SHEET 5: CHARTS & DASHBOARDS ============
+print("\n📊 Sheet 5: Creating Interactive Charts & Dashboard...")
+
+ws_charts = wb.create_sheet("Charts & Dashboard")
+
+# Title
+title = ws_charts['A1']
+title.value = "FAMILY EXPENSE DASHBOARD - VISUAL ANALYTICS"
+title.font = Font(bold=True, size=16, color="FFFFFF")
+title.fill = PatternFill(start_color="203764", end_color="203764", fill_type="solid")
+title.alignment = Alignment(horizontal="center", vertical="center")
+ws_charts.merge_cells('A1:H1')
+ws_charts.row_dimensions[1].height = 30
+
+# KPIs
+ws_charts['A3'].value = "QUICK METRICS"
+ws_charts['A3'].font = Font(bold=True, size=12, color="FFFFFF")
+ws_charts['A3'].fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+ws_charts.merge_cells('A3:H3')
+
+kpi_data = [
+    ("Total Spent", f"${total_spent:,.2f}", "1F4E78"),
+    ("Monthly Avg", f"${monthly_avg:,.2f}", "70AD47"),
+    ("Yearly Avg", f"${yearly_avg:,.2f}", "FFC000"),
+    ("Avg Transaction", f"${avg_transaction:,.2f}", "FF6B6B"),
+]
+
+col = 1
+for kpi_title, kpi_value, color in kpi_data:
+    cell = ws_charts.cell(row=5, column=col)
+    cell.value = kpi_title
+    cell.font = Font(bold=True, color="FFFFFF", size=10)
+    cell.fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
+    cell.alignment = Alignment(horizontal="center")
+    ws_charts.merge_cells(start_row=5, start_column=col, end_row=5, end_column=col+1)
+    
+    cell = ws_charts.cell(row=6, column=col)
+    cell.value = kpi_value
+    cell.font = Font(bold=True, size=14)
+    cell.alignment = Alignment(horizontal="center")
+    ws_charts.merge_cells(start_row=6, start_column=col, end_row=6, end_column=col+1)
+    col += 2
+
+# Top Spending Categories
+ws_charts['A9'].value = "TOP 5 SPENDING CATEGORIES"
+ws_charts['A9'].font = Font(bold=True, size=11, color="FFFFFF")
+ws_charts['A9'].fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+ws_charts.merge_cells('A9:D9')
+
+ws_charts['A11'].value = "Category"
+ws_charts['B11'].value = "Amount"
+ws_charts['C11'].value = "% of Total"
+for col in ['A', 'B', 'C']:
+    ws_charts[f'{col}11'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    ws_charts[f'{col}11'].font = Font(bold=True)
+
+row_idx = 12
+for i, cat in enumerate(sorted(category_data.keys(), key=lambda x: category_data[x]["total"], reverse=True)[:5]):
+    ws_charts[f'A{row_idx}'].value = cat
+    ws_charts[f'B{row_idx}'].value = category_data[cat]["total"]
+    ws_charts[f'B{row_idx}'].number_format = '$#,##0.00'
+    ws_charts[f'C{row_idx}'].value = (category_data[cat]["total"] / total_spent) * 100
+    ws_charts[f'C{row_idx}'].number_format = '0.0"%"'
+    row_idx += 1
+
+# Yearly Comparison
+ws_charts['E9'].value = "YEARLY SPENDING COMPARISON"
+ws_charts['E9'].font = Font(bold=True, size=11, color="FFFFFF")
+ws_charts['E9'].fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+ws_charts.merge_cells('E9:F9')
+
+ws_charts['E11'].value = "Year"
+ws_charts['F11'].value = "Total Spent"
+for col in ['E', 'F']:
+    ws_charts[f'{col}11'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    ws_charts[f'{col}11'].font = Font(bold=True)
+
+row_idx = 12
+for year in sorted(yearly_data.keys()):
+    ws_charts[f'E{row_idx}'].value = year
+    ws_charts[f'F{row_idx}'].value = yearly_data[year]
+    ws_charts[f'F{row_idx}'].number_format = '$#,##0.00'
+    row_idx += 1
+
+# Monthly Savings Potential
+ws_charts['A20'].value = "MONTHLY SPENDING & SAVINGS POTENTIAL"
+ws_charts['A20'].font = Font(bold=True, size=11, color="FFFFFF")
+ws_charts['A20'].fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+ws_charts.merge_cells('A20:C20')
+
+ws_charts['A22'].value = "Month"
+ws_charts['B22'].value = "Spent"
+ws_charts['C22'].value = "Potential Savings (30%)"
+for col in ['A', 'B', 'C']:
+    ws_charts[f'{col}22'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    ws_charts[f'{col}22'].font = Font(bold=True)
+
+row_idx = 23
+for month in sorted(monthly_data.keys())[-12:]:  # Last 12 months
+    ws_charts[f'A{row_idx}'].value = month
+    ws_charts[f'B{row_idx}'].value = monthly_data[month]
+    ws_charts[f'B{row_idx}'].number_format = '$#,##0.00'
+    ws_charts[f'C{row_idx}'].value = monthly_data[month] * 0.3
+    ws_charts[f'C{row_idx}'].number_format = '$#,##0.00'
+    row_idx += 1
+
+# Column widths
+ws_charts.column_dimensions['A'].width = 20
+ws_charts.column_dimensions['B'].width = 15
+ws_charts.column_dimensions['C'].width = 18
+ws_charts.column_dimensions['E'].width = 15
+ws_charts.column_dimensions['F'].width = 15
+
+print("✅ Charts & Dashboard sheet created with visual analytics")
 
 # Save the workbook
-output_file = "Sales_Data_Dashboard.xlsx"
+output_file = "Family_Expense_Dashboard.xlsx"
 wb.save(output_file)
-print(f"\n✅ Excel file '{output_file}' created successfully!")
-print("\nFile Structure:")
-print("  Sheet 1: Raw Data (1000 records with sales information)")
-print("  Sheet 2: Cleaned Data (900+ records, cancelled orders removed)")
-print("  Sheet 3: Pivot Tables (Sales by Region, Product, and Status Summary)")
-print("  Sheet 4: Interactive Dashboard (KPIs, Regional Analysis, Top Products)")
+
+print("\n" + "="*60)
+print(f"✨ FAMILY EXPENSE DASHBOARD CREATED SUCCESSFULLY! ✨")
+print("="*60)
+print(f"\n📊 File: {output_file}")
+print(f"\n📈 Data Summary:")
+print(f"   • Total Records: {cleaned_count}")
+print(f"   • Time Period: 2019-2024 (5 years)")
+print(f"   • Total Spending: ${total_spent:,.2f}")
+print(f"   • Monthly Average: ${monthly_avg:,.2f}")
+print(f"   • Yearly Average: ${yearly_avg:,.2f}")
+print(f"\n📋 Sheets Created:")
+print(f"   1. Raw Data - Original expense records")
+print(f"   2. Cleaned Data - Validated & cleaned records")
+print(f"   3. Data Analysis - Relationships & summaries")
+print(f"   4. Pivot Data - Data for charts")
+print(f"   5. Charts & Dashboard - Visual analytics")
+print(f"\n💡 Open the file in Excel to explore interactive charts!")
+print("="*60)
